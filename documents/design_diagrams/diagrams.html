@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UML Диаграммы CourierFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключаем библиотеку Mermaid.js для рендеринга диаграмм -->
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'ui-sans-serif, system-ui, sans-serif'
+        });
+    </script>
+    <style>
+        .mermaid-card {
+            page-break-inside: avoid;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 md:p-8 font-sans text-gray-800">
+
+    <div class="max-w-5xl mx-auto">
+        <div class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">UML Диаграммы CourierFlow</h1>
+        </div>
+
+        <!-- 1. Class Diagram -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 mb-8 mermaid-card">
+            <h2 class="text-2xl font-bold border-b pb-4 mb-6">
+                1. Диаграмма классов (Class Diagram)
+            </h2>
+            <div class="mermaid">
+classDiagram
+    class User {
+        +UUID id
+        +String email
+        +String passwordHash
+        +Role role
+        +register()
+        +login()
+    }
+
+    class Role {
+        &lt;&lt;enumeration&gt;&gt;
+        CUSTOMER
+        COURIER
+    }
+
+    class Order {
+        +UUID id
+        +UUID customerId
+        +UUID courierId
+        +String description
+        +String pickupAddress
+        +String deliveryAddress
+        +OrderStatus status
+        +String trackingUrl
+        +create()
+        +updateStatus()
+    }
+
+    class OrderStatus {
+        &lt;&lt;enumeration&gt;&gt;
+        CREATED
+        ACCEPTED
+        PICKED_UP
+        IN_TRANSIT
+        DELIVERED
+        CANCELLED
+    }
+
+    User --> Role
+    Order --> OrderStatus
+    User "1" -- "*" Order : creates (Customer)
+    User "1" -- "*" Order : delivers (Courier)
+            </div>
+        </div>
+
+        <!-- 2. Use Case Diagram -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 mb-8 mermaid-card">
+            <h2 class="text-2xl font-bold border-b pb-4 mb-6">
+                2. Диаграмма прецедентов (Use Case)
+            </h2>
+            <div class="mermaid">
+flowchart LR
+    Customer([Customer])
+    Courier([Courier])
+
+    subgraph CourierFlow System
+        Auth(Register / Login)
+        Create(Create Order)
+        ViewC(View Own Orders)
+        Cancel(Cancel Order)
+
+        Available(View Available Orders)
+        Accept(Accept Order)
+        Update(Update Status)
+
+        Track(Track Order via URL)
+    end
+
+    Customer --> Auth
+    Customer --> Create
+    Customer --> ViewC
+    Customer --> Cancel
+    Customer --> Track
+
+    Courier --> Auth
+    Courier --> Available
+    Courier --> Accept
+    Courier --> Update
+    Courier --> Track
+            </div>
+        </div>
+
+        <!-- 3. State Diagram -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 mb-8 mermaid-card">
+            <h2 class="text-2xl font-bold border-b pb-4 mb-6">
+                3. Диаграмма состояний (State Diagram)
+            </h2>
+            <div class="mermaid">
+stateDiagram-v2
+    [*] --> CREATED : Клиент создал заказ
+    CREATED --> ACCEPTED : Курьер принял заказ
+    ACCEPTED --> PICKED_UP : Курьер забрал груз
+    PICKED_UP --> IN_TRANSIT : Курьер в пути
+    IN_TRANSIT --> DELIVERED : Груз доставлен
+
+    CREATED --> CANCELLED : Отмена клиентом
+    ACCEPTED --> CANCELLED : Отмена (до выдачи)
+
+    DELIVERED --> [*]
+    CANCELLED --> [*]
+            </div>
+        </div>
+
+        <!-- 4.1. Sequence: Create Order -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 mb-8 mermaid-card">
+            <h2 class="text-2xl font-bold border-b pb-4 mb-6">
+                4.1. Sequence Diagram: Создание заказа
+            </h2>
+            <div class="mermaid">
+sequenceDiagram
+    actor Customer
+    participant API as API (FastAPI)
+    participant Service as OrderService
+    participant DB as Database
+
+    Customer->>API: POST /orders (маршрут, описание)
+    API->>Service: Валидация и создание сущности
+    Service->>DB: INSERT INTO orders
+    DB-->>Service: Успех (id)
+    Service->>Service: Генерация tracking_url
+    Service->>DB: UPDATE tracking_url
+    Service-->>API: Order DTO (данные заказа)
+    API-->>Customer: 201 Created (JSON)
+            </div>
+        </div>
+
+        <!-- 4.2. Sequence: Accept Order -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 mb-8 mermaid-card">
+            <h2 class="text-2xl font-bold border-b pb-4 mb-6">
+                4.2. Sequence Diagram: Принятие заказа курьером
+            </h2>
+            <div class="mermaid">
+sequenceDiagram
+    actor Courier
+    participant API as API (FastAPI)
+    participant Service as OrderService
+    participant DB as Database
+
+    Courier->>API: POST /orders/{id}/accept
+    API->>Service: Проверка: статус CREATED?
+    Service->>DB: SELECT status FROM orders WHERE id={id}
+    DB-->>Service: status = CREATED
+    Service->>DB: UPDATE orders SET courier_id={c_id}, status=ACCEPTED
+    DB-->>Service: Успех
+    Service-->>API: Обновленный Order DTO
+    API-->>Courier: 200 OK
+            </div>
+        </div>
+
+        <!-- 4.3. Sequence: Track Order -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 mb-8 mermaid-card">
+            <h2 class="text-2xl font-bold border-b pb-4 mb-6">
+                4.3. Sequence Diagram: Отслеживание заказа
+            </h2>
+            <div class="mermaid">
+sequenceDiagram
+    actor User
+    participant API as API (FastAPI)
+    participant Service as TrackingService
+    participant DB as Database
+
+    User->>API: GET /track/{tracking_url}
+    API->>Service: getOrderByTrackingUrl()
+    Service->>DB: SELECT * FROM orders WHERE tracking_url={url}
+    DB-->>Service: Данные (статус, геопозиция)
+    Service-->>API: Tracking DTO
+    API-->>User: 200 OK (статус, локация)
+            </div>
+        </div>
+
+        <!-- 5.1. Activity: Create Order -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 mb-8 mermaid-card">
+            <h2 class="text-2xl font-bold border-b pb-4 mb-6">
+                5.1. Activity Diagram: Сценарий создания
+            </h2>
+            <div class="mermaid">
+flowchart TD
+    Start((Начало)) --> Input[Ввод данных заказа]
+    Input --> Validate{Данные валидны?}
+    Validate -- Нет --> Error[Показ ошибки 400] --> Input
+    Validate -- Да --> Gen[Генерация ID и Tracking URL]
+    Gen --> Save[Сохранение в БД]
+    Save --> Success[Возврат ответа 201 Created]
+    Success --> End((Конец))
+            </div>
+        </div>
+
+        <!-- 5.2. Activity: Accept Order -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 mb-8 mermaid-card">
+            <h2 class="text-2xl font-bold border-b pb-4 mb-6">
+                5.2. Activity Diagram: Сценарий принятия
+            </h2>
+            <div class="mermaid">
+flowchart TD
+    Start((Начало)) --> View[Просмотр доступных заказов]
+    View --> Select[Выбор заказа]
+    Select --> Check{Заказ свободен?}
+    Check -- Нет --> Fail[Ошибка 409 Conflict] --> View
+    Check -- Да --> Assign[Назначение Courier ID]
+    Assign --> UpdateStatus[Изменение статуса на ACCEPTED]
+    UpdateStatus --> Save[Обновление записи в БД]
+    Save --> Success[Возврат 200 OK]
+    Success --> End((Конец))
+            </div>
+        </div>
+
+        <!-- 5.3. Activity: Track Order -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 mb-8 mermaid-card">
+            <h2 class="text-2xl font-bold border-b pb-4 mb-6">
+                5.3. Activity Diagram: Сценарий трекинга
+            </h2>
+            <div class="mermaid">
+flowchart TD
+    Start((Начало)) --> Open[Переход по Tracking URL]
+    Open --> Fetch[Поиск заказа в БД по URL]
+    Fetch --> Check{Заказ найден?}
+    Check -- Нет --> Error[Ошибка 404 Not Found] --> End((Конец))
+    Check -- Да --> Extract[Извлечение статуса и локации]
+    Extract --> Display[Отображение данных на карте/UI]
+    Display --> End
+            </div>
+        </div>
+
+        <!-- 6. Component Diagram -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 mb-8 mermaid-card">
+            <h2 class="text-2xl font-bold border-b pb-4 mb-6">
+                6. Диаграмма компонентов (Component Diagram)
+            </h2>
+            <div class="mermaid">
+flowchart TB
+    UI[Client App / Web / Postman]
+
+    subgraph Backend [FastAPI Backend System]
+        Router[API Routers / Controllers]
+        AuthMod[Auth Module]
+        OrderMod[Order Module]
+        TrackMod[Tracking Module]
+    end
+
+    DB[(PostgreSQL / SQLite)]
+
+    UI -- HTTP / REST --> Router
+    Router --> AuthMod
+    Router --> OrderMod
+    Router --> TrackMod
+
+    AuthMod --> DB
+    OrderMod --> DB
+    TrackMod --> DB
+            </div>
+        </div>
+
+        <!-- 7. Deployment Diagram -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 mb-12 mermaid-card">
+            <h2 class="text-2xl font-bold border-b pb-4 mb-6">
+                7. Диаграмма развертывания (Deployment)
+            </h2>
+            <div class="mermaid">
+flowchart TB
+    subgraph Client [Устройство пользователя]
+        Browser[Браузер / Мобильное приложение]
+    end
+
+    subgraph Server [VPS / Cloud Server]
+        NGINX[Nginx / Reverse Proxy]
+        Uvicorn[Uvicorn / ASGI Server]
+        App[FastAPI Application]
+
+        Uvicorn --- App
+    end
+
+    subgraph DatabaseNode [СУБД]
+        DB[(PostgreSQL)]
+    end
+
+    Browser -- "HTTPS" --> NGINX
+    NGINX -- "HTTP :8000" --> Uvicorn
+    App -- "TCP :5432" --> DB
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
