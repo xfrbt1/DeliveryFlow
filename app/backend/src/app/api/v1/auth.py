@@ -15,12 +15,18 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(body: RegisterRequest, uow: UoWDep) -> UserResponse:
     """Create a new account."""
-    dto = CreateUserDTO(email=body.email, password=body.password, full_name=body.full_name)
+    dto = CreateUserDTO(
+        email=body.email,
+        password=body.password,
+        full_name=body.full_name,
+        role=body.role,
+    )
     result = await register_user(uow, dto)
     return UserResponse(
         id=result.id,
         email=result.email,
         full_name=result.full_name,
+        role=result.role,
         is_active=result.is_active,
         created_at=result.created_at,
         updated_at=result.updated_at,
@@ -36,7 +42,11 @@ async def login(
     """Return JWT access token."""
     dto = LoginDTO(email=body.email, password=body.password)
     user = await login_user(uow, dto)
-    token = create_access_token(subject=str(user.id), settings=settings)
+    token = create_access_token(
+        subject=str(user.id),
+        settings=settings,
+        extra_claims={"role": user.role},
+    )
     return TokenResponse(access_token=token)
 
 
@@ -51,6 +61,7 @@ async def me(
         id=profile.id,
         email=profile.email,
         full_name=profile.full_name,
+        role=profile.role,
         is_active=profile.is_active,
         created_at=profile.created_at,
         updated_at=profile.updated_at,
