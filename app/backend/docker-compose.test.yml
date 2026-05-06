@@ -1,0 +1,59 @@
+services:
+  postgres_test:
+    image: postgres:17-alpine
+    container_name: app-postgres-test
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app_test
+    ports:
+      - "55432:5432"
+    volumes:
+      - pgdata_test:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis_test:
+    image: redis:7-alpine
+    container_name: app-redis-test
+    ports:
+      - "56379:6379"
+    volumes:
+      - redisdata_test:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  test_runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: app-test-runner
+    depends_on:
+      postgres_test:
+        condition: service_healthy
+      redis_test:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres_test
+      DB_PORT: 5432
+      DB_USER: app
+      DB_PASSWORD: app
+      DB_NAME: app_test
+      REDIS_HOST: redis_test
+      REDIS_PORT: 6379
+      REDIS_DB: "15"
+      JWT_SECRET_KEY: test-secret-key-at-least-32-chars-long
+      PYTHONPATH: /app/src
+    volumes:
+      - ./tests:/app/tests
+    command: ["pytest", "tests/unit", "tests/integration", "-v"]
+
+volumes:
+  pgdata_test:
+  redisdata_test:

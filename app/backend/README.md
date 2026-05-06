@@ -69,11 +69,46 @@ See details in [migrations/README.md](migrations/README.md).
 ```bash
 export PYTHONPATH=src
 export JWT_SECRET_KEY="your-test-secret-at-least-32-chars-long!!"
+# Integration tests use Redis logical DB 15 by default (see tests/integration/conftest.py)
+# so they do not wipe your dev cache on Redis DB 0.
+export REDIS_DB=15
 poetry run pytest tests/unit -v                    # unit (without DB)
 poetry run pytest tests/integration -v             # requires PostgreSQL and Redis (docker compose up -d)
 ```
 
 Integration tests are skipped (`skipped`) if the database is unavailable.
+
+If Docker-based integration runs fail with `relation "users" does not exist`, rebuild the test
+runner image so tests pick up the current `tests/integration/conftest.py` (ORM models must be
+imported before `create_all`). Example:
+
+```bash
+docker compose -f docker-compose.test.yml build --no-cache test_runner
+```
+
+### Isolated Tests (Docker)
+
+Run **unit** and **integration** tests in a dedicated disposable environment (separate Postgres/Redis, separate
+volumes, separate ports), without touching your regular dev stack:
+
+```bash
+make test-isolated
+# same command:
+make test-integration-isolated
+```
+
+Cleanup test containers and test volumes:
+
+```bash
+make test-integration-isolated-down
+```
+
+Direct command alternative:
+
+```bash
+docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test_runner test_runner
+docker compose -f docker-compose.test.yml down -v
+```
 
 ## Architecture
 

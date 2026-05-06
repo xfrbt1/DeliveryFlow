@@ -1,4 +1,4 @@
-.PHONY: install run test test-unit test-integration lint format typecheck migrate migration revision docker-build up down logs shell
+.PHONY: install run test test-unit test-integration test-isolated test-integration-isolated test-integration-isolated-down lint format typecheck migrate migration revision docker-build up down logs shell
 
 PYTHONPATH ?= src
 export PYTHONPATH
@@ -17,6 +17,12 @@ test-unit:
 
 test-integration:
 	poetry run pytest tests/integration -v
+
+test-integration-isolated test-isolated:
+	docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test_runner test_runner
+
+test-integration-isolated-down:
+	docker compose -f docker-compose.test.yml down -v
 
 lint:
 	poetry run flake8 src tests
