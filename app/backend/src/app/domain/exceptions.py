@@ -30,3 +30,28 @@ class InvalidCredentialsError(DomainError):
 
     def __init__(self) -> None:
         super().__init__("Invalid email or password")
+
+
+class OrderNotFoundError(DomainError):
+    def __init__(self, *, order_id: str | None = None, tracking_url: str | None = None) -> None:
+        if order_id is not None:
+            super().__init__(f"Order not found: id={order_id}")
+        elif tracking_url is not None:
+            super().__init__(f"Order not found: tracking_url={tracking_url!r}")
+        else:
+            super().__init__("Order not found")
+
+
+class OrderConflictError(DomainError):
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
+class InvalidStatusTransitionError(DomainError):
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
+class OrderAccessDeniedError(DomainError):
+    def __init__(self, message: str = "Access denied for this order") -> None:
+        super().__init__(message)

@@ -16,7 +16,9 @@ async def test_register_login_me_and_user_crud(http_client: AsyncClient) -> None
         },
     )
     assert reg.status_code == 201, reg.text
-    user_id = reg.json()["id"]
+    body = reg.json()
+    user_id = body["id"]
+    assert body["role"] == "customer"
 
     login = await http_client.post(
         "/api/v1/auth/login",

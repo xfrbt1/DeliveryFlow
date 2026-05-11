@@ -3,6 +3,7 @@ from types import TracebackType
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.application.interfaces.unit_of_work import UnitOfWork
+from app.infrastructure.repositories.order_repository import SqlAlchemyOrderRepository
 from app.infrastructure.repositories.user_repository import SqlAlchemyUserRepository
 
 
@@ -11,6 +12,7 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
         self._session_factory = session_factory
         self._session: AsyncSession | None = None
         self._users: SqlAlchemyUserRepository | None = None
+        self._orders: SqlAlchemyOrderRepository | None = None
 
     @property
     def users(self) -> SqlAlchemyUserRepository:
@@ -21,9 +23,19 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
             self._users = SqlAlchemyUserRepository(self._session)
         return self._users
 
+    @property
+    def orders(self) -> SqlAlchemyOrderRepository:
+        if self._session is None:
+            msg = "UnitOfWork is not active"
+            raise RuntimeError(msg)
+        if self._orders is None:
+            self._orders = SqlAlchemyOrderRepository(self._session)
+        return self._orders
+
     async def __aenter__(self) -> "SqlAlchemyUnitOfWork":
         self._session = self._session_factory()
         self._users = SqlAlchemyUserRepository(self._session)
+        self._orders = SqlAlchemyOrderRepository(self._session)
         return self
 
     async def __aexit__(
@@ -41,6 +53,7 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
             await self._session.close()
             self._session = None
             self._users = None
+            self._orders = None
 
     async def commit(self) -> None:
         if self._session is None:

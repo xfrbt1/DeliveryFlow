@@ -209,6 +209,7 @@ jobs:
           DB_NAME: app
           REDIS_HOST: 127.0.0.1
           REDIS_PORT: "6379"
+          REDIS_DB: "15"
         run: poetry run pytest tests/integration -v --tb=short
 
   # ────────────────────────────────────────────────────────────────────────────

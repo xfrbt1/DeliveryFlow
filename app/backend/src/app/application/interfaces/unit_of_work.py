@@ -1,6 +1,7 @@
 from types import TracebackType
 from typing import Protocol
 
+from app.domain.repositories.order_repository import OrderRepository
 from app.domain.repositories.user_repository import UserRepository
 
 
@@ -10,6 +11,10 @@ class UnitOfWork(Protocol):
     @property
     def users(self) -> UserRepository:
         """User aggregate repository."""
+
+    @property
+    def orders(self) -> OrderRepository:
+        """Order aggregate repository."""
 
     async def __aenter__(self) -> "UnitOfWork":
         """Begin transaction context."""

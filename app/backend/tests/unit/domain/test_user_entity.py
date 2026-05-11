@@ -7,6 +7,7 @@ import pytest
 
 from app.domain.entities.user import User
 from app.domain.value_objects.email import Email
+from app.domain.value_objects.role import Role
 
 
 def test_email_normalizes_and_validates() -> None:
@@ -30,6 +31,7 @@ def test_user_rename_business_rule() -> None:
         email=Email("u@example.com"),
         hashed_password="x",
         full_name="Alice",
+        role=Role.CUSTOMER,
         created_at=now,
         updated_at=now,
     )

@@ -8,10 +8,12 @@ from app.core.security import hash_password
 from app.domain.entities.user import User
 from app.domain.exceptions import UserAlreadyExistsError
 from app.domain.value_objects.email import Email
+from app.domain.value_objects.role import Role
 
 
 async def register_user(uow: UnitOfWork, dto: CreateUserDTO) -> UserDTO:
     email = Email(dto.email)
+    role = Role(dto.role.strip().lower())
     async with uow:
         existing = await uow.users.get_by_email(email)
         if existing is not None:
@@ -22,6 +24,7 @@ async def register_user(uow: UnitOfWork, dto: CreateUserDTO) -> UserDTO:
             email=email,
             hashed_password=hash_password(dto.password),
             full_name=dto.full_name.strip(),
+            role=role,
             created_at=now,
             updated_at=now,
             is_active=True,

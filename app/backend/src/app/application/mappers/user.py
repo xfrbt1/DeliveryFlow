@@ -8,6 +8,7 @@ def user_to_dto(entity: User) -> UserDTO:
         id=entity.id,
         email=entity.email.value,
         full_name=entity.full_name,
+        role=entity.role.value,
         is_active=entity.is_active,
         created_at=entity.created_at,
         updated_at=entity.updated_at,

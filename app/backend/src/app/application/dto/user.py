@@ -8,6 +8,7 @@ class UserDTO:
     id: UUID
     email: str
     full_name: str
+    role: str
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -18,6 +19,7 @@ class CreateUserDTO:
     email: str
     password: str
     full_name: str
+    role: str = "customer"
 
 
 @dataclass(frozen=True, slots=True)

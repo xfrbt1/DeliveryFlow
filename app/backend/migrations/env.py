@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from app.core.config import get_settings
 from app.infrastructure.db.base import Base
 # Ensure ORM models are imported so Base.metadata includes all tables.
+from app.infrastructure.db.models import order  # noqa: F401
 from app.infrastructure.db.models import user  # noqa: F401
 
 config = context.config

@@ -3,6 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 from app.domain.value_objects.email import Email
+from app.domain.value_objects.role import Role
 
 
 @dataclass(slots=True)
@@ -13,6 +14,7 @@ class User:
     email: Email
     hashed_password: str
     full_name: str
+    role: Role
     created_at: datetime
     updated_at: datetime
     is_active: bool = True

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.entities.user import User
 from app.domain.repositories.user_repository import UserRepository
 from app.domain.value_objects.email import Email
+from app.domain.value_objects.role import Role
 from app.infrastructure.db.models.user import UserModel
 
 
@@ -15,6 +16,7 @@ def _to_domain(row: UserModel) -> User:
         email=Email(row.email),
         hashed_password=row.hashed_password,
         full_name=row.full_name,
+        role=Role(row.role),
         created_at=row.created_at,
         updated_at=row.updated_at,
         is_active=row.is_active,
@@ -27,6 +29,7 @@ def _to_model(entity: User) -> UserModel:
         email=entity.email.value,
         hashed_password=entity.hashed_password,
         full_name=entity.full_name,
+        role=entity.role.value,
         created_at=entity.created_at,
         updated_at=entity.updated_at,
         is_active=entity.is_active,
@@ -65,6 +68,7 @@ class SqlAlchemyUserRepository(UserRepository):
         existing.email = user.email.value
         existing.hashed_password = user.hashed_password
         existing.full_name = user.full_name
+        existing.role = user.role.value
         existing.is_active = user.is_active
         existing.updated_at = user.updated_at
 
